@@ -1,0 +1,26 @@
+.main-container {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+}
+
+nav {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+nav a {
+  margin: 0 15px;
+  text-decoration: none;
+  color: #007bff;
+  font-weight: bold;
+}
+
+nav a.active {
+  color: #0056b3;
+  border-bottom: 2px solid #0056b3;
+}

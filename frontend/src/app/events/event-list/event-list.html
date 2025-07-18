@@ -1,0 +1,34 @@
+<div class="container">
+  <h2>Lista de Eventos</h2>
+
+  <button (click)="createNewEvent()" class="add-button">Adicionar Novo Evento</button>
+
+  <div *ngIf="isLoading" class="loading-spinner">Carregando eventos...</div>
+
+  <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+
+  <div *ngIf="!isLoading && events.length === 0 && !errorMessage" class="no-events-message">
+    Nenhum evento encontrado.
+  </div>
+
+  <table *ngIf="!isLoading && events.length > 0" class="event-table">
+    <thead>
+    <tr>
+      <th>Nome</th>
+      <th>Data</th>
+      <th>Local</th>
+      <th>Ações</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let event of events">
+      <td>{{ event.nome }}</td>
+      <td>{{ event.data | date:'shortDate' }}</td> <td>{{ event.local }}</td>
+      <td>
+        <button (click)="editEvent(event.id)" class="edit-button">Editar</button>
+        <button (click)="deleteEvent(event.id)" class="delete-button">Excluir</button>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</div>

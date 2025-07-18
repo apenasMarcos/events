@@ -1,0 +1,75 @@
+
+version: '3.8'
+
+services:
+  # Serviço para o Banco de Dados PostgreSQL
+  db:
+    image: postgres:16-alpine
+    container_name: postgres_db
+    # Variáveis de ambiente puxadas do .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432" # Mapeia a porta do host para a porta do contêiner
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - event_network # Conecta à rede dedicada
+
+  # Serviço para o Backend (Spring Boot)
+  backend:
+    build: ./backend # Constrói a imagem a partir do Dockerfile na pasta 'backend'
+    container_name: eventmanager_backend
+    ports:
+      - "${BACKEND_PORT}:${BACKEND_PORT}" # Mapeia a porta do host para a porta do contêiner
+    environment: # Variáveis de ambiente puxadas do .env
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      SPRING_FLYWAY_ENABLED: ${SPRING_FLYWAY_ENABLED}
+      SERVER_PORT: ${BACKEND_PORT} # Garante que o Spring Boot escute na porta correta
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - event_network # Conecta à rede dedicada
+    restart: always
+
+  # Serviço para o Frontend (Angular)
+  frontend:
+    build: ./frontend # Constrói a imagem a partir do Dockerfile na pasta 'frontend'
+    container_name: eventmanager_frontend
+    ports:
+      - "${FRONTEND_PORT}:80" # Mapeia a porta do host (FRONTEND_PORT) para a porta 80 do Nginx
+    # O frontend geralmente não precisa de variáveis de ambiente passadas diretamente do .env
+    # Se precisar de configuração de ambiente no Angular, é melhor fazê-lo via environment.ts
+    # e ajustar a base URL da API lá, ou injetar via Nginx.
+    environment:
+      # Exemplo: A base URL da API pode ser injetada via variável de ambiente,
+      # mas para o build do Angular, isso geralmente precisa de ferramentas como dotenv-webpack.
+      # Para o Nginx, é mais comum configurar um proxy reverso ou usar o nome do serviço 'backend'
+      # para se comunicar internamente. Para desenvolvimento local, 'localhost' funciona.
+      ANGULAR_API_BASE_URL: ${ANGULAR_API_BASE_URL}
+    depends_on:
+      backend:
+        condition: service_started # Pode ser service_healthy se o backend tiver healthcheck
+    networks:
+      - event_network # Conecta à rede dedicada
+    restart: always
+
+# Volumes para persistência de dados
+volumes:
+  postgres_data:
+
+# Rede dedicada para os serviços
+networks:
+  event_network:
+    driver: bridge # O tipo de rede padrão para comunicação entre contêineres
